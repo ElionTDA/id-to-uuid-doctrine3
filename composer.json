@@ -1,5 +1,5 @@
 {
-    "name": "habbim/id-to-uuid",
+    "name": "alexandrump/id-to-uuid",
     "description": "Easily migrate from auto incremented id to uuid",
     "type": "library",
     "autoload": {
@@ -23,6 +23,10 @@
         {
             "name": "Daniel Esteve",
             "email": "daniel@esteve.li"
+        },
+        {
+            "name": "Alejandro Martínez",
+            "email": "alejandrompere@gmail.com"
         }
     ],
     "require-dev": {
