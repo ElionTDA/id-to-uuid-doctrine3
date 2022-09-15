@@ -1,10 +1,10 @@
 {
-    "name": "alexandrump/id-to-uuid",
+    "name": "alexandrump/id-to-uuid-doctrine3",
     "description": "Easily migrate from auto incremented id to uuid",
     "type": "library",
     "autoload": {
       "psr-4": {
-        "Habbim\\IdToUuid\\": "src/"
+        "Alexandrump\\IdToUuidDoctrine3\\": "src/"
       }
     },
     "require": {

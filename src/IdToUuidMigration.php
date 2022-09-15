@@ -1,26 +1,17 @@
 <?php
 
 /*
- * This file is part of the habbim/id-to-uuid project.
+ * This file is part of the alexandrump/id-to-uuid-doctrine3 project.
  *
  * (c) Cap Collectif <coucou@cap-collectif.com>
  * (c) Daniel Esteve <daniel@esteve.li>
+ * (c) Alejandro Martinez <alejandrompere@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-/*
- * This file is part of the habbim/id-to-uuid project.
- *
- * (c) Cap Collectif <coucou@cap-collectif.com>
- * (c) Daniel Esteve <daniel@esteve.li>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
-namespace Habbim\IdToUuid;
+namespace Alexandrump\IdToUuidDoctrine3;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\DBAL\ParameterType;

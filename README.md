@@ -1,4 +1,6 @@
-# id-to-uuid
+# id-to-uuid-doctrine3
+
+This library is a port of `habbim/id-to-uuid` package for Doctrine 3.
 
 Easily migrate from an auto incremented integer id to a [uuid](https://en.wikipedia.org/wiki/Universally_unique_identifier) in a project using [DoctrineMigrationsBundle](https://github.com/doctrine/DoctrineMigrationsBundle).
 Autodetect your foreign keys and update them. **Works only on MySQL**.
@@ -6,7 +8,7 @@ Autodetect your foreign keys and update them. **Works only on MySQL**.
 ## Installation
 
 ```
-composer require habbim/id-to-uuid
+composer require alexandrump/id-to-uuid-doctrine3
 ```
 
 ## Usage
