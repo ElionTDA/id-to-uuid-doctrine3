@@ -159,14 +159,14 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
 
     private function addUuidFields()
     {
-        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD uuid CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\' FIRST');
+        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD uuid CHAR(' . $this->uuidSize . ') NOT NULL COMMENT \'(DC2Type:uuid)\' FIRST');
         foreach ($this->fks as $fk) {
-            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD ' . $fk['tmpKey'] . ' CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD ' . $fk['tmpKey'] . ' CHAR(' . $this->uuidSize . ') NOT NULL COMMENT \'(DC2Type:uuid)\'');
         }
 
         foreach ($this->extraRelationships as &$relationship) {
             $relationship['tmpKey'] = $relationship['key'] . '_to_uuid';
-            $this->connection->executeQuery('ALTER TABLE `' . $relationship['table'] . '` ADD ' . $relationship['tmpKey'] . ' CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $relationship['table'] . '` ADD ' . $relationship['tmpKey'] . ' CHAR(' . $this->uuidSize . ') NOT NULL COMMENT \'(DC2Type:uuid)\'');
         }
     }
 
@@ -198,7 +198,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
                 );
             }
             $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` DROP COLUMN `' . $extraRelationship['key'] . '`');
-            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` CHANGE `' . $extraRelationship['tmpKey'] . '` ' . $extraRelationship['key'] . ' CHAR('. $this->uuidSize .') ' . ' COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` CHANGE `' . $extraRelationship['tmpKey'] . '` ' . $extraRelationship['key'] . ' CHAR(' . $this->uuidSize . ') ' . ' COMMENT \'(DC2Type:uuid)\'');
         }
     }
 
@@ -240,7 +240,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
     {
         $this->write('-> Renaming temporary uuid foreign keys to previous foreign keys names...');
         foreach ($this->fks as $fk) {
-            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` CHANGE `' . $fk['tmpKey'] . '` ' . $fk['key'] . ' CHAR('. $this->uuidSize .') ' . ($fk['nullable'] ? 'NULL ' : 'NOT NULL ') . 'COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` CHANGE `' . $fk['tmpKey'] . '` ' . $fk['key'] . ' CHAR(' . $this->uuidSize . ') ' . ($fk['nullable'] ? 'NULL ' : 'NOT NULL ') . 'COMMENT \'(DC2Type:uuid)\'');
             if ($fk['nullable']) {
                 $this->connection->update(
                     $fk['table'],
@@ -255,7 +255,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
     {
         $this->write('-> Creating the uuid primary key...');
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` DROP PRIMARY KEY, DROP COLUMN id');
-        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` CHANGE uuid id CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\'');
+        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` CHANGE uuid id CHAR(' . $this->uuidSize . ') NOT NULL COMMENT \'(DC2Type:uuid)\'');
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD PRIMARY KEY (id)');
 
     }
@@ -275,7 +275,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
             $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD CONSTRAINT `' . $fk['name'] . '` FOREIGN KEY (' . $fk['key'] . ') REFERENCES ' . $this->table . ' (id)' .
                 (isset($fk['onDelete']) ? ' ON DELETE ' . $fk['onDelete'] : '')
             );
-            $this->connection->executeQuery('CREATE INDEX `' . str_replace('FK_', 'IDX_', $fk['name']) . '` ON ' . $fk['table'] . ' (' . $fk['key'] . ')');
+            $this->connection->executeQuery('CREATE INDEX `' . $fk['name'] . '_idx` ON ' . $fk['table'] . ' (' . $fk['key'] . ')');
         }
     }
 }
