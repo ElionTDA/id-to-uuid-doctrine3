@@ -115,7 +115,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
         $this->idToUuidMap = [];
 
         foreach ($this->schemaManager->listTables() as $table) {
-            /* @var $table Table*/
+            /* @var $table Table */
             $foreignKeys = $this->schemaManager->listTableForeignKeys($table->getName());
             foreach ($foreignKeys as $foreignKey) {
                 $key = $foreignKey->getColumns()[0];
@@ -153,7 +153,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
             $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD ' . $fk['tmpKey'] . ' CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
         }
 
-        foreach ($this->extraRelationships as &$relationship){
+        foreach ($this->extraRelationships as &$relationship) {
             $relationship['tmpKey'] = $relationship['key'] . '_to_uuid';
             $this->connection->executeQuery('ALTER TABLE `' . $relationship['table'] . '` ADD ' . $relationship['tmpKey'] . ' CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
         }
@@ -161,7 +161,8 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
 
     private function generateUuidsToReplaceIds()
     {
-        $fetchs = $this->connection->fetchAll('SELECT id from `' . $this->table.'` order by id ASC');
+        $this->write('Migrating UUIDS...');
+        $fetchs = $this->connection->fetchAllAssociative('SELECT id from `' . $this->table . '` order by id ASC');
         if (\count($fetchs) > 0) {
             $this->write('-> Generating ' . \count($fetchs) . ' UUID(s)...');
             foreach ($fetchs as $fetch) {
@@ -173,19 +174,20 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
         }
     }
 
-    private function changeToUUIDExtraRelationships(){
+    private function changeToUUIDExtraRelationships()
+    {
         $this->write('-> Adding UUIDs to tables extra relations...');
-        foreach ($this->extraRelationships as $extraRelationship){
+        foreach ($this->extraRelationships as $extraRelationship) {
             $this->write('  * Adding UUIDs to "' . $extraRelationship['table'] . '.' . $extraRelationship['key'] . '"...');
-            foreach ($this->idToUuidMap as $id => $uuid){
+            foreach ($this->idToUuidMap as $id => $uuid) {
                 $this->connection->update(
                     $extraRelationship['table'],
                     [$extraRelationship['tmpKey'] => $uuid],
-                    array_merge([$extraRelationship['key']=>$id],$extraRelationship['findExtra'])
+                    array_merge([$extraRelationship['key'] => $id], $extraRelationship['findExtra'])
                 );
             }
-            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` DROP COLUMN `' . $extraRelationship['key'].'`');
-            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` CHANGE `' . $extraRelationship['tmpKey'] . '` ' . $extraRelationship['key'] . ' CHAR(36) '  . ' COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` DROP COLUMN `' . $extraRelationship['key'] . '`');
+            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` CHANGE `' . $extraRelationship['tmpKey'] . '` ' . $extraRelationship['key'] . ' CHAR(36) ' . ' COMMENT \'(DC2Type:uuid)\'');
         }
     }
 
@@ -197,11 +199,11 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
         $this->write('-> Adding UUIDs to tables with foreign keys...');
         foreach ($this->fks as $fk) {
             $this->write('  * Adding UUIDs to "' . $fk['table'] . '.' . $fk['key'] . '"...');
-            foreach ($this->idToUuidMap as $id => $uuid){
+            foreach ($this->idToUuidMap as $id => $uuid) {
                 $this->connection->update(
                     $fk['table'],
                     [$fk['tmpKey'] => $uuid],
-                    [$fk['key']=>$id]
+                    [$fk['key'] => $id]
                 );
             }
         }
@@ -218,8 +220,8 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
                 } catch (\Exception $e) {
                 }
             }
-            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` DROP FOREIGN KEY `' . $fk['name'].'`');
-            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` DROP COLUMN `' . $fk['key'].'`');
+            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` DROP FOREIGN KEY `' . $fk['name'] . '`');
+            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` DROP COLUMN `' . $fk['key'] . '`');
         }
     }
 
@@ -228,11 +230,11 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
         $this->write('-> Renaming temporary uuid foreign keys to previous foreign keys names...');
         foreach ($this->fks as $fk) {
             $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` CHANGE `' . $fk['tmpKey'] . '` ' . $fk['key'] . ' CHAR(36) ' . ($fk['nullable'] ? 'NULL ' : 'NOT NULL ') . 'COMMENT \'(DC2Type:uuid)\'');
-            if($fk['nullable']){
+            if ($fk['nullable']) {
                 $this->connection->update(
                     $fk['table'],
                     [$fk['key'] => null],
-                    [$fk['key']=>'']
+                    [$fk['key'] => '']
                 );
             }
         }
@@ -244,10 +246,12 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` DROP PRIMARY KEY, DROP COLUMN id');
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` CHANGE uuid id CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD PRIMARY KEY (id)');
+
     }
 
     private function restoreConstraintsAndIndexes()
     {
+        $this->write('-> Restoring Constraints and Indexes...');
         foreach ($this->fks as $fk) {
             if (isset($fk['primaryKey'])) {
                 try {
