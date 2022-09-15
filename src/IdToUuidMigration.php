@@ -65,6 +65,15 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
 
     protected $extraRelationships;
 
+    /**
+     * @var int
+     */
+    protected $uuidSize;
+    /**
+     * @var string
+     */
+    protected $uuidPrefix;
+
     public function setContainer(ContainerInterface $container = null)
     {
         $this->em = $container->get('doctrine')->getManager();
@@ -77,8 +86,10 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
     {
     }
 
-    public function migrate(string $tableName, array $extraRelationships = [])
+    public function migrate(string $tableName, array $extraRelationships = [], $uuidPrefix = "")
     {
+        $this->uuidPrefix = $uuidPrefix;
+        $this->uuidSize = 36 + strlen($uuidPrefix);
         $this->extraRelationships = $extraRelationships;
         $this->write('Migrating ' . $tableName . '.id to UUIDs...');
         $this->prepare($tableName);
@@ -148,14 +159,14 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
 
     private function addUuidFields()
     {
-        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD uuid CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\' FIRST');
+        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD uuid CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\' FIRST');
         foreach ($this->fks as $fk) {
-            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD ' . $fk['tmpKey'] . ' CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD ' . $fk['tmpKey'] . ' CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\'');
         }
 
         foreach ($this->extraRelationships as &$relationship) {
             $relationship['tmpKey'] = $relationship['key'] . '_to_uuid';
-            $this->connection->executeQuery('ALTER TABLE `' . $relationship['table'] . '` ADD ' . $relationship['tmpKey'] . ' CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $relationship['table'] . '` ADD ' . $relationship['tmpKey'] . ' CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\'');
         }
     }
 
@@ -167,7 +178,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
             $this->write('-> Generating ' . \count($fetchs) . ' UUID(s)...');
             foreach ($fetchs as $fetch) {
                 $id = $fetch['id'];
-                $uuid = $this->generator->generate($this->em, null)->toString();
+                $uuid = $this->uuidPrefix . $this->generator->generate($this->em, null)->toString();
                 $this->idToUuidMap[$id] = $uuid;
                 $this->connection->update($this->table, ['uuid' => $uuid], ['id' => $id]);
             }
@@ -187,7 +198,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
                 );
             }
             $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` DROP COLUMN `' . $extraRelationship['key'] . '`');
-            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` CHANGE `' . $extraRelationship['tmpKey'] . '` ' . $extraRelationship['key'] . ' CHAR(36) ' . ' COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $extraRelationship['table'] . '` CHANGE `' . $extraRelationship['tmpKey'] . '` ' . $extraRelationship['key'] . ' CHAR('. $this->uuidSize .') ' . ' COMMENT \'(DC2Type:uuid)\'');
         }
     }
 
@@ -229,7 +240,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
     {
         $this->write('-> Renaming temporary uuid foreign keys to previous foreign keys names...');
         foreach ($this->fks as $fk) {
-            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` CHANGE `' . $fk['tmpKey'] . '` ' . $fk['key'] . ' CHAR(36) ' . ($fk['nullable'] ? 'NULL ' : 'NOT NULL ') . 'COMMENT \'(DC2Type:uuid)\'');
+            $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` CHANGE `' . $fk['tmpKey'] . '` ' . $fk['key'] . ' CHAR('. $this->uuidSize .') ' . ($fk['nullable'] ? 'NULL ' : 'NOT NULL ') . 'COMMENT \'(DC2Type:uuid)\'');
             if ($fk['nullable']) {
                 $this->connection->update(
                     $fk['table'],
@@ -244,7 +255,7 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
     {
         $this->write('-> Creating the uuid primary key...');
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` DROP PRIMARY KEY, DROP COLUMN id');
-        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` CHANGE uuid id CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
+        $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` CHANGE uuid id CHAR('. $this->uuidSize .') NOT NULL COMMENT \'(DC2Type:uuid)\'');
         $this->connection->executeQuery('ALTER TABLE `' . $this->table . '` ADD PRIMARY KEY (id)');
 
     }
@@ -256,7 +267,6 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
             if (isset($fk['primaryKey'])) {
                 try {
                     $stm = 'ALTER TABLE `' . $fk['table'] . '` ADD PRIMARY KEY (' . implode(',', array_keys($fk['primaryKey'])) . ')';
-                    $this->write($stm);
                     // restore primary key if not already restored
                     $this->connection->executeQuery($stm);
                 } catch (\Exception $e) {
