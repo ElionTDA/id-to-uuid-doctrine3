@@ -255,8 +255,10 @@ class IdToUuidMigration extends AbstractMigration implements ContainerAwareInter
         foreach ($this->fks as $fk) {
             if (isset($fk['primaryKey'])) {
                 try {
+                    $stm = 'ALTER TABLE `' . $fk['table'] . '` ADD PRIMARY KEY (' . implode(',', array_keys($fk['primaryKey'])) . ')';
+                    $this->write($stm);
                     // restore primary key if not already restored
-                    $this->connection->executeQuery('ALTER TABLE `' . $fk['table'] . '` ADD PRIMARY KEY (' . implode(',', $fk['primaryKey']) . ')');
+                    $this->connection->executeQuery($stm);
                 } catch (\Exception $e) {
                 }
             }
