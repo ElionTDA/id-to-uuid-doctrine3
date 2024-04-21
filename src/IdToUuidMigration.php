@@ -11,7 +11,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Alexandrump\IdToUuidDoctrine3;
+namespace ElionTDA\IdToUuidDoctrine3;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\DBAL\ParameterType;
